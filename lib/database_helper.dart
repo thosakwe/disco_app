@@ -6,14 +6,15 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 
 class DatabaseHelper {
   
-  static final _databaseName = "MyDatabase.db";
+  static final _databaseName = "Disco.db";
   static final _databaseVersion = 1;
 
-  static final table = 'my_table';
+  static final table = 'clients';
   
   static final columnId = '_id';
-  static final columnName = 'name';
-  static final columnAge = 'age';
+  static final clientId = 'client_id';
+  static final clientName = 'client_name';
+  static final clientSecret = 'client_secret';
 
   // make this a singleton class
   DatabaseHelper._privateConstructor();
@@ -42,8 +43,9 @@ class DatabaseHelper {
     await db.execute('''
           CREATE TABLE $table (
             $columnId INTEGER PRIMARY KEY,
-            $columnName TEXT NOT NULL,
-            $columnAge INTEGER NOT NULL
+            $clientId TEXT NOT NULL,
+            $clientName TEXT NOT NULL,
+            $clientSecret TEXT NOT NULL
           )
           ''');
   }
@@ -56,6 +58,12 @@ class DatabaseHelper {
   Future<int> insert(Map<String, dynamic> row) async {
     Database db = await instance.database;
     return await db.insert(table, row);
+  }
+
+  Future<List<Map<String, dynamic>>> queryClientId(String id) async {
+    Database db = await instance.database;
+    return await db.query(table, where: '$clientId = ?', whereArgs: [id]);
+    // return await db.rawQuery('SELECT * FROM $table WHERE $clientId = $id');
   }
 
   // All of the rows are returned as a list of maps, where each map is 
@@ -76,14 +84,14 @@ class DatabaseHelper {
   // column values will be used to update the row.
   Future<int> update(Map<String, dynamic> row) async {
     Database db = await instance.database;
-    int id = row[columnId];
-    return await db.update(table, row, where: '$columnId = ?', whereArgs: [id]);
+    String id = row[clientId];
+    return await db.update(table, row, where: '$clientId = ?', whereArgs: [id]);
   }
 
   // Deletes the row specified by the id. The number of affected rows is 
   // returned. This should be 1 as long as the row exists.
-  Future<int> delete(int id) async {
+  Future<int> delete(String id) async {
     Database db = await instance.database;
-    return await db.delete(table, where: '$columnId = ?', whereArgs: [id]);
+    return await db.delete(table, where: '$clientId = ?', whereArgs: [id]);
   }
 }

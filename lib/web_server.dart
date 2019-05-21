@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:angel_framework/angel_framework.dart';
 import 'package:angel_framework/http.dart';
 import 'package:angel_oauth2/angel_oauth2.dart' as oauth2;
+import 'package:angel_oauth2/angel_oauth2.dart';
 // import 'package:angel_mustache/angel_mustache.dart';
 import 'package:disco_app/client.dart';
 import 'package:disco_app/user.dart';
@@ -48,24 +49,10 @@ Future<AngelHttp> startWebServer({int port = 3000}) async {
 
   print('Started HTTP server at ${http.server.address}:${http.server.port}');
 
-  app.get('/auth', (req, res) {
-    try {
-      authServer.authorizationEndpoint(req, res);
-    } catch (e) {
-      print(e);
-    }
-  });
-
-  // app.group('/auth', (router) {
-  //   router
-  //     ..get('/authorize', authServer.authorizationEndpoint)
-  //     ..post('/token', authServer.tokenEndpoint);
-  // });
-
-  app.post('/signin', (req, res) async {
-    // await req.parseBody();
-    // print(req.headers.value('grant_type'));
-    authServer.tokenEndpoint(req, res);
+  app.group('/auth', (router) {
+    router
+      ..get('/authorize', authServer.authorizationEndpoint)
+      ..post('/token', authServer.tokenEndpoint);
   });
 
   app.fallback((req, res) {
@@ -90,17 +77,6 @@ class _AuthServer extends oauth2.AuthorizationServer<Client, User> {
   @override
   Future<void> authorizationEndpoint(
       RequestContext req, ResponseContext res) async {
-    // TODO: implement authorizationEndpoint
-    print('Hit: authorizationEndpoint');
-    var params = req.queryParameters;
-    // final String response_type = params['response_type'];
-    final String client_id = params['client_id'];
-    final String redirect_uri = params['redirect_uri'];
-    final page = GrantAccessPage(client_id, redirect_uri);
-    res
-      ..contentType = htmlType
-      ..write(GrantAccessPageComponent(page).render());
-    // res..write({'key': 'value'});
     return super.authorizationEndpoint(req, res);
   }
 
@@ -113,46 +89,21 @@ class _AuthServer extends oauth2.AuthorizationServer<Client, User> {
       RequestContext req,
       ResponseContext res,
       bool implicit) async {
-    // TODO: implement requestAuthorizationCode
-
-    print('Hit: requestAuthorizationCode');
-
-    // throw UnimplementedError();
-    // return super.requestAuthorizationCode(
-    //     client, redirectUri, scopes, state, req, res, implicit);
-  }
-
-  @override
-  Future tokenEndpoint(RequestContext req, ResponseContext res) async {
-    // TODO: implement tokenEndpoint
-    print('Hit: tokenEndpoint');
-    try {
-      return super.tokenEndpoint(req, res);
-    } catch (e) {
-      print(e);
+    if (implicit) {
+      res
+        ..redirect(super.completeImplicitGrant(
+            await clientCredentialsGrant(client, req, res),
+            Uri(path: redirectUri)));
+    } else {
+      throw AuthorizationException(
+        ErrorResponse(
+          oauth2.ErrorResponse.unsupportedResponseType,
+          'Only implicit auth method is supported.',
+          state,
+        ),
+        statusCode: 500,
+      );
     }
-  }
-
-  @override
-  FutureOr<oauth2.AuthorizationTokenResponse> exchangeDeviceCodeForToken(
-      Client client,
-      String deviceCode,
-      String state,
-      RequestContext req,
-      ResponseContext res) async {
-    // TODO: implement exchangeDeviceCodeForToken
-    return oauth2.AuthorizationTokenResponse('asd');
-  }
-
-  @override
-  FutureOr<oauth2.AuthorizationTokenResponse> exchangeAuthorizationCodeForToken(
-      Client client,
-      String authCode,
-      String redirectUri,
-      RequestContext req,
-      ResponseContext res) async {
-    // TODO: implement exchangeAuthorizationCodeForToken
-    return oauth2.AuthorizationTokenResponse('asd');
   }
 
   @override
@@ -163,6 +114,15 @@ class _AuthServer extends oauth2.AuthorizationServer<Client, User> {
 
   @override
   FutureOr<bool> verifyClient(Client client, String clientSecret) async {
+    // TODO: implement verifyClient
     return true;
+  }
+
+  @override
+  FutureOr<oauth2.AuthorizationTokenResponse> clientCredentialsGrant(
+      Client client, RequestContext req, ResponseContext res) async {
+    // TODO: implement clientCredentialsGrant
+    // var body = await req.parseBody().then((_) => req.bodyAsMap);
+    return oauth2.AuthorizationTokenResponse('token_001');
   }
 }

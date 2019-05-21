@@ -39,6 +39,16 @@ class _MyHomePageState extends State<MyHomePage> {
   final dbHelper = DatabaseHelper.instance;
   Future<AngelHttp> http;
 
+  String queryId;
+  String insertId;
+  String insertName;
+  String insertSecret;
+  String updateId;
+  String updateName;
+  String updateSecret;
+  String deleteId;
+  String displayString = 'nothing';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,96 +59,236 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            RaisedButton(
-              onPressed: () {
-                setState(() {
-                  http = startWebServer();
-                  print(http);
-                });
-                return http;
-              },
-              child: Text('Start server'),
+            Row(
+              children: <Widget>[
+                RaisedButton(
+                  onPressed: () {
+                    setState(() {
+                      http = startWebServer();
+                      print(http);
+                    });
+                    return http;
+                  },
+                  child: Text('Start server'),
+                ),
+                RaisedButton(
+                  child: Text('Close server'),
+                  onPressed: () {
+                    // print(http);
+                    closeWebServer(http);
+                  },
+                ),
+              ],
             ),
-            RaisedButton(
-              child: Text('Close server'),
-              onPressed: () {
-                // print(http);
-                closeWebServer(http);
-              },
-            ),
-            RaisedButton(
-              child: Text(
-                'insert',
-                style: TextStyle(fontSize: 20),
+            Container(
+              color: Colors.red,
+              child: Column(
+                children: <Widget>[
+                  RaisedButton(
+                    child: Text(
+                      'Insert',
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    onPressed: () {
+                      _insert(insertId, insertName, insertSecret);
+                    },
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text('client_id'),
+                      Container(
+                        child: TextField(
+                          onChanged: (t) {
+                            setState(() {
+                              insertId = t;
+                            });
+                          },
+                        ),
+                        width: 40.0,
+                      ),
+                      Text('client_name'),
+                      Container(
+                        child: TextField(
+                          onChanged: (t) {
+                            setState(() {
+                              insertName = t;
+                            });
+                          },
+                        ),
+                        width: 40.0,
+                      ),
+                      Text('client_secret'),
+                      Container(
+                          child: TextField(
+                            onChanged: (t) {
+                              setState(() {
+                                insertSecret = t;
+                              });
+                            },
+                          ),
+                          width: 40.0),
+                    ],
+                  ),
+                ],
               ),
-              onPressed: () {
-                _insert();
-              },
             ),
-            RaisedButton(
-              child: Text(
-                'query',
-                style: TextStyle(fontSize: 20),
+            Container(
+              color: Colors.orange,
+              child: Row(
+                children: <Widget>[
+                  RaisedButton(
+                    child: Text(
+                      'Query',
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    onPressed: () async {
+                      print('query $queryId');
+                      var res = await dbHelper.queryAllRows();
+                      res.forEach((row) => print(row));
+                      _query(queryId);
+                    },
+                  ),
+                  Text('client_id'),
+                  Container(
+                    child: TextField(
+                      onChanged: (t) {
+                        queryId = t;
+                      },
+                    ),
+                    width: 100.0,
+                  ),
+                ],
               ),
-              onPressed: () {
-                _query();
-              },
             ),
-            RaisedButton(
-              child: Text(
-                'update',
-                style: TextStyle(fontSize: 20),
+            Container(
+              color: Colors.red,
+              child: Column(
+                children: <Widget>[
+                  RaisedButton(
+                    child: Text(
+                      'Update by client_id',
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    onPressed: () {
+                      _update(updateId, updateName, updateSecret);
+                    },
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text('client_id'),
+                      Container(
+                        child: TextField(
+                          onChanged: (t) {
+                            setState(() {
+                              updateId = t;
+                            });
+                          },
+                        ),
+                        width: 40.0,
+                      ),
+                      Text('client_name'),
+                      Container(
+                        child: TextField(
+                          onChanged: (t) {
+                            setState(() {
+                              updateName = t;
+                            });
+                          },
+                        ),
+                        width: 40.0,
+                      ),
+                      Text('client_secret'),
+                      Container(
+                          child: TextField(
+                            onChanged: (t) {
+                              setState(() {
+                                updateSecret = t;
+                              });
+                            },
+                          ),
+                          width: 40.0),
+                    ],
+                  ),
+                ],
               ),
-              onPressed: () {
-                _update();
-              },
             ),
-            RaisedButton(
-              child: Text(
-                'delete',
-                style: TextStyle(fontSize: 20),
+            Container(
+              color: Colors.greenAccent,
+              child: Row(
+                children: <Widget>[
+                  RaisedButton(
+                    child: Text(
+                      'Delete',
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    onPressed: () {
+                      _delete(deleteId);
+                    },
+                  ),
+                  Text('client_id'),
+                  Container(
+                    child: TextField(
+                      onChanged: (t) {
+                        setState(() {
+                          deleteId = t;
+                        });
+                      },
+                    ),
+                    width: 100.0,
+                  ),
+                ],
               ),
-              onPressed: () {
-                _delete();
-              },
             ),
+            Text(displayString),
           ],
         ),
       ),
     );
   }
 
-  void _insert() async {
+  int clientCount = 0;
+
+  void _insert(String cid, String name, String secret) async {
     // row to insert
     Map<String, dynamic> row = {
-      DatabaseHelper.columnName: 'Bob',
-      DatabaseHelper.columnAge: 23
+      DatabaseHelper.clientId: cid,
+      DatabaseHelper.clientName: name,
+      DatabaseHelper.clientSecret: secret
     };
+    clientCount++;
     final id = await dbHelper.insert(row);
-    print('inserted row id: $id');
+    setState(() {
+      displayString = 'inserted row id: $id';
+    });
   }
 
-  void _query() async {
-    final allRows = await dbHelper.queryAllRows();
-    print('query all rows:');
-    allRows.forEach((row) => print(row));
+  void _query(String id) async {
+    final res = await dbHelper.queryClientId(id);
+    res.forEach((row) => print(row));
+    setState(() {
+      displayString = res.toString();
+    });
   }
 
-  void _update() async {
+  void _update(String id, String name, String secret) async {
     // row to update
     Map<String, dynamic> row = {
-      DatabaseHelper.columnId: 1,
-      DatabaseHelper.columnName: 'Mary',
-      DatabaseHelper.columnAge: 32
+      DatabaseHelper.clientId: id,
+      DatabaseHelper.clientName: name,
+      DatabaseHelper.clientSecret: secret
     };
     final rowsAffected = await dbHelper.update(row);
-    print('updated $rowsAffected row(s)');
+    setState(() {
+      displayString = 'updated $rowsAffected row(s)';
+    });
   }
 
-  void _delete() async {
-    // Assuming that the number of rows is the id for the last row.
-    final id = await dbHelper.queryRowCount();
+  void _delete(String id) async {
     final rowsDeleted = await dbHelper.delete(id);
-    print('deleted $rowsDeleted row(s): row $id');
+    setState(() {
+      displayString = 'deleted $rowsDeleted row(s): row $id';
+    });
   }
 }
